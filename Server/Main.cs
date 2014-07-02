@@ -152,6 +152,18 @@ namespace DarkMultiPlayerServer
             {
                 Directory.CreateDirectory(Path.Combine(Server.universeDirectory, "Flags"));
             }
+            if (!Directory.Exists(Path.Combine(Server.universeDirectory, "Groups")))
+            {
+                Directory.CreateDirectory(Path.Combine(Server.universeDirectory, "Groups"));
+            }
+            if (!Directory.Exists(Path.Combine(Path.Combine(Server.universeDirectory, "Groups"), "Groups")))
+            {
+                Directory.CreateDirectory(Path.Combine(Path.Combine(Server.universeDirectory, "Groups"), "Groups"));
+            }
+            if (!Directory.Exists(Path.Combine(Path.Combine(Server.universeDirectory, "Groups"), "Players")))
+            {
+                Directory.CreateDirectory(Path.Combine(Path.Combine(Server.universeDirectory, "Groups"), "Players"));
+            }
             if (!Directory.Exists(Path.Combine(universeDirectory, "Players")))
             {
                 Directory.CreateDirectory(Path.Combine(universeDirectory, "Players"));

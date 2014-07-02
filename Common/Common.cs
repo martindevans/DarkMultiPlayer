@@ -20,6 +20,13 @@ namespace DarkMultiPlayerCommon
         //Program version. This is written in the build scripts.
         public const string PROGRAM_VERSION = "Custom";
 
+        public static string CalculateSHA256HashFromString(string textData)
+        {
+            UTF8Encoding encoder = new UTF8Encoding();
+            byte[] textBytes = encoder.GetBytes(textData);
+            return CalculateSHA256Hash(textBytes);
+        }
+
         public static string CalculateSHA256Hash(string fileName)
         {
             return CalculateSHA256Hash(File.ReadAllBytes(fileName));
@@ -346,6 +353,7 @@ namespace DarkMultiPlayerCommon
         CRAFT_LIBRARY,
         SCREENSHOT_LIBRARY,
         FLAG_SYNC,
+        GROUP,
         SYNC_TIME_REQUEST,
         PING_REQUEST,
         MOTD_REQUEST,
@@ -376,6 +384,7 @@ namespace DarkMultiPlayerCommon
         CRAFT_LIBRARY,
         SCREENSHOT_LIBRARY,
         FLAG_SYNC,
+        GROUP,
         SET_SUBSPACE,
         SYNC_TIME_REPLY,
         PING_REPLY,
@@ -480,6 +489,17 @@ namespace DarkMultiPlayerCommon
         LIST,
         ACQUIRE,
         RELEASE,
+    }
+
+    public enum GroupMessageType
+    {
+        LIST,
+        JOIN,
+        LEAVE,
+        SET_OWNER,
+        SET_PASSWORD,
+        ADD_PLAYER,
+        REMOVE_PLAYER,
     }
 
     public enum FlagMessageType

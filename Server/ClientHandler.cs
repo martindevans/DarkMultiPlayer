@@ -36,6 +36,7 @@ namespace DarkMultiPlayerServer
         private static Dictionary<string, Dictionary<string,int>> playerDownloadedScreenshotIndex;
         private static Dictionary<string, string> playerWatchScreenshot;
         private static LockSystem lockSystem;
+        private static GroupSystem groupSystem;
         private static object clientLock = new object();
         #region Main loop
         public static void ThreadMain()
@@ -57,6 +58,7 @@ namespace DarkMultiPlayerServer
                 playerDownloadedScreenshotIndex = new Dictionary<string, Dictionary <string, int>>();
                 playerWatchScreenshot = new Dictionary<string, string>();
                 lockSystem = new LockSystem();
+                groupSystem = new GroupSystem();
                 LoadSavedSubspace();
                 LoadBans();
                 LoadAdmins();
@@ -904,6 +906,9 @@ namespace DarkMultiPlayerServer
                         break;
                     case ClientMessageType.FLAG_SYNC:
                         HandleFlagSync(client, message.data);
+                        break;
+                    case ClientMessageType.GROUP:
+                        groupSystem.HandleGroupMessage(client, message.data);
                         break;
                     case ClientMessageType.PING_REQUEST:
                         HandlePingRequest(client, message.data);
