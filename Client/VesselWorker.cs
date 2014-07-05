@@ -1831,6 +1831,43 @@ namespace DarkMultiPlayer
                 DarkLog.Debug("ApplyVesselUpdate - updateBody not found");
                 return;
             }
+
+            Quaternion updateRotation = new Quaternion(update.rotation[0], update.rotation[1], update.rotation[2], update.rotation[3]);
+            updateVessel.SetRotation(updateVessel.mainBody.bodyTransform.rotation * updateRotation);
+
+            Vector3 angularVelocity = new Vector3(update.angularVelocity[0], update.angularVelocity[1], update.angularVelocity[2]);
+
+            if (updateVessel.LandedOrSplashed)
+            {
+                updateVessel.angularVelocity = Vector3.zero;
+                if (updateVessel.rootPart != null && updateVessel.rootPart.rb != null && !updateVessel.rootPart.rb.isKinematic)
+                {
+                    updateVessel.rootPart.rb.angularVelocity = Vector3.zero;
+                }
+            }
+            else
+            {
+                updateVessel.angularVelocity = angularVelocity;
+                if (updateVessel.parts != null)
+                {
+                    Vector3 newAng = updateVessel.ReferenceTransform.rotation * angularVelocity;
+                    foreach (Part vesselPart in updateVessel.parts)
+                    {
+                        if (vesselPart.rb != null && !vesselPart.rb.isKinematic && vesselPart.State == PartStates.ACTIVE)
+                        {
+                            if (vesselPart.rb.rotation != updateVessel.rootPart.rb.rotation)
+                            {
+                                vesselPart.rb.angularVelocity = (Quaternion.Inverse(updateVessel.rootPart.rb.rotation) * vesselPart.rb.rotation) * newAng;
+                            }
+                            else
+                            {
+                                vesselPart.rb.angularVelocity = newAng;
+                            }
+                        }
+                    }
+                }
+            }
+
             if (update.isSurfaceUpdate)
             {
                 //Get the new position/velocity
@@ -1880,57 +1917,34 @@ namespace DarkMultiPlayer
             else
             {
                 Orbit updateOrbit = new Orbit(update.orbit[0], update.orbit[1], update.orbit[2], update.orbit[3], update.orbit[4], update.orbit[5], update.orbit[6], updateBody);
-
                 if (updateVessel.packed)
                 {
                     CopyOrbit(updateOrbit, updateVessel.orbitDriver.orbit);
                 }
                 else
                 {
+                    /*
                     Vector3d ourCoMDiff = Vector3d.zero;
                     if (HighLogic.LoadedScene == GameScenes.FLIGHT && FlightGlobals.fetch.activeVessel != null)
                     {
                         ourCoMDiff = FlightGlobals.fetch.activeVessel.findWorldCenterOfMass() - FlightGlobals.fetch.activeVessel.GetWorldPos3D();
                     }
+                    */
                     //KSP's inaccuracy hurts me.
                     Vector3d orbitalPositionDelta = updateBody.bodyTransform.rotation * new Vector3d(update.orbitalPositionDelta[0], update.orbitalPositionDelta[1], update.orbitalPositionDelta[2]);
-                    updateVessel.SetPosition(updateOrbit.getPositionAtUT(Planetarium.GetUniversalTime()) + orbitalPositionDelta + ourCoMDiff);
+                    //RP to CoM
+                    /*
+                    Vector3d rootPartCoMDiff = Vector3d.zero;
+                    if (updateVessel.rootPart != null)
+                    {
+                        rootPartCoMDiff = updateVessel.findWorldCenterOfMass() - updateVessel.GetWorldPos3D();
+                    }
+                    */
+                    updateVessel.SetPosition(updateOrbit.getPositionAtUT(Planetarium.GetUniversalTime()) + orbitalPositionDelta, true);
                     Vector3d velocityOffset = updateOrbit.getOrbitalVelocityAtUT(Planetarium.GetUniversalTime()).xzy - updateVessel.orbit.getOrbitalVelocityAtUT(Planetarium.GetUniversalTime()).xzy;
                     updateVessel.ChangeWorldVelocity(velocityOffset);
                 }
 
-            }
-            Quaternion updateRotation = new Quaternion(update.rotation[0], update.rotation[1], update.rotation[2], update.rotation[3]);
-            updateVessel.SetRotation(updateVessel.mainBody.bodyTransform.rotation * updateRotation);
-
-            Vector3 angularVelocity = new Vector3(update.angularVelocity[0], update.angularVelocity[1], update.angularVelocity[2]);
-
-            if (updateVessel.LandedOrSplashed)
-            {
-                updateVessel.angularVelocity = Vector3.zero;
-                if (updateVessel.rootPart != null && 
-                    updateVessel.rootPart.rb != null &&
-                    !updateVessel.rootPart.rb.isKinematic)
-                {
-                    updateVessel.rootPart.rb.angularVelocity = Vector3.zero;
-                }
-            }
-            else
-            {
-                updateVessel.angularVelocity = angularVelocity;
-                if (updateVessel.parts != null)
-                {
-                    Vector3 newAng = updateVessel.ReferenceTransform.rotation * angularVelocity;
-                    foreach (Part vesselPart in updateVessel.parts)
-                    {
-                        if (vesselPart.rb != null && 
-                            !vesselPart.rb.isKinematic && 
-                            vesselPart.State == PartStates.ACTIVE)
-                        {
-                            vesselPart.rb.angularVelocity = newAng;
-                        }
-                    }
-                }
             }
 
             if (!isSpectating)
