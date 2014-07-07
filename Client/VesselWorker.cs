@@ -1392,8 +1392,9 @@ namespace DarkMultiPlayer
                         {
                             //Don't replace the vessel if it's unpacked, not landed, close to the ground, and has the same amount of parts.
                             double hft = oldVessel.GetHeightFromTerrain();
-                            if (oldVessel.loaded && !oldVessel.packed && !oldVessel.Landed && (hft < 1000) && (currentProto.protoPartSnapshots.Count == oldVessel.parts.Count))
+                            if (oldVessel.loaded && !oldVessel.packed && !oldVessel.Landed && (hft != -1) && (hft < 1000) && (currentProto.protoPartSnapshots.Count == oldVessel.parts.Count))
                             {
+                                DarkLog.Debug("Skipping vessel update - Vessel is close to the ground and would get destroyed on reload");
                                 return;
                             }
                             //Don't kill the active vessel - Kill it after we switch.
