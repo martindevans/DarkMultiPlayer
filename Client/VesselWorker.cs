@@ -1046,6 +1046,7 @@ namespace DarkMultiPlayer
                     returnUpdate.orbit[5] = updateVessel.orbit.meanAnomalyAtEpoch;
                     returnUpdate.orbit[6] = updateVessel.orbit.epoch;
                     //KSP tells us a bunch of lies, there's a ~40 meter error between our actual position and the orbital position
+                    /*
                     Vector3d vesselPos = updateVessel.GetWorldPos3D();
                     Vector3d orbitPos = updateVessel.orbitDriver.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
                     Vector3d positionDelta = Quaternion.Inverse(updateVessel.mainBody.bodyTransform.rotation) * (vesselPos - orbitPos);
@@ -1053,7 +1054,7 @@ namespace DarkMultiPlayer
                     returnUpdate.orbitalPositionDelta[0] = positionDelta.x;
                     returnUpdate.orbitalPositionDelta[1] = positionDelta.y;
                     returnUpdate.orbitalPositionDelta[2] = positionDelta.z;
-
+                    */
                 }
 
             }
@@ -1397,6 +1398,17 @@ namespace DarkMultiPlayer
                                 DarkLog.Debug("Skipping vessel update - Vessel is close to the ground and would get destroyed on reload");
                                 return;
                             }
+                            //Calculate loading error for debugging purposes
+                            OrbitSnapshot os = currentProto.orbitSnapShot;
+                            Orbit newOrbit = new Orbit(os.inclination, os.eccentricity, os.semiMajorAxis, os.LAN, os.argOfPeriapsis, os.meanAnomalyAtEpoch, os.epoch, FlightGlobals.Bodies[os.ReferenceBodyIndex]);
+                            newOrbit.Init();
+                            newOrbit.UpdateFromUT(Planetarium.GetUniversalTime());
+                            Vector3d newOrbitPos = newOrbit.getPositionAtUT(Planetarium.GetUniversalTime());
+                            Vector3d oldVesselPos = oldVessel.GetWorldPos3D();
+                            Vector3d oldVesselOrbitPos = oldVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
+                            Vector3d newOldDelta = newOrbitPos - oldVesselOrbitPos;
+                            Vector3d newOldPosDelta = newOrbitPos - oldVesselPos;
+                            DarkLog.Debug("Delta: " + newOldDelta + " |" + newOldDelta.magnitude + "|, posDelta: " + newOldPosDelta + " |" + newOldPosDelta.magnitude + "|");
                             //Don't kill the active vessel - Kill it after we switch.
                             //Killing the active vessel causes all sorts of crazy problems.
                             if (wasActive)
@@ -1866,6 +1878,10 @@ namespace DarkMultiPlayer
                 DarkLog.Debug("ApplyVesselUpdate - updateBody not found");
                 return;
             }
+
+            Quaternion updateRotation = new Quaternion(update.rotation[0], update.rotation[1], update.rotation[2], update.rotation[3]);
+            updateVessel.SetRotation(updateVessel.mainBody.bodyTransform.rotation * updateRotation);
+
             if (update.isSurfaceUpdate)
             {
                 //Get the new position/velocity
@@ -1922,30 +1938,27 @@ namespace DarkMultiPlayer
                 }
                 else
                 {
-                    Vector3d ourCoMDiff = Vector3d.zero;
-                    if (HighLogic.LoadedScene == GameScenes.FLIGHT && FlightGlobals.fetch.activeVessel != null)
+                    Vector3d ourOrbitDiff = Vector3d.zero;
+                    if (HighLogic.LoadedScene == GameScenes.FLIGHT && FlightGlobals.ready && FlightGlobals.fetch.activeVessel != null && FlightGlobals.fetch.activeVessel.orbit != null)
                     {
-                        ourCoMDiff = FlightGlobals.fetch.activeVessel.findWorldCenterOfMass() - FlightGlobals.fetch.activeVessel.GetWorldPos3D();
+                        //You may want to take rage medication before reading this line - It returns a vector that really should be 0 but really isn't. It's ~40m in LKO.
+                        ourOrbitDiff = FlightGlobals.fetch.activeVessel.GetWorldPos3D() - FlightGlobals.fetch.activeVessel.orbit.getPositionAtUT(Planetarium.GetUniversalTime());
                     }
-                    //KSP's inaccuracy hurts me.
-                    Vector3d orbitalPositionDelta = updateBody.bodyTransform.rotation * new Vector3d(update.orbitalPositionDelta[0], update.orbitalPositionDelta[1], update.orbitalPositionDelta[2]);
-                    updateVessel.SetPosition(updateOrbit.getPositionAtUT(Planetarium.GetUniversalTime()) + orbitalPositionDelta + ourCoMDiff);
+                    //Vector3d updateVesselRootToCoM = updateVessel.GetWorldPos3D() - updateVessel.findWorldCenterOfMass();
+                    //DarkLog.Debug("Root <-> CoM " + updateVesselRootToCoM + " |" + updateVesselRootToCoM.magnitude + "|");
+                    updateVessel.SetPosition(updateOrbit.getPositionAtUT(Planetarium.GetUniversalTime()) + ourOrbitDiff);
                     Vector3d velocityOffset = updateOrbit.getOrbitalVelocityAtUT(Planetarium.GetUniversalTime()).xzy - updateVessel.orbit.getOrbitalVelocityAtUT(Planetarium.GetUniversalTime()).xzy;
                     updateVessel.ChangeWorldVelocity(velocityOffset);
                 }
 
             }
-            Quaternion updateRotation = new Quaternion(update.rotation[0], update.rotation[1], update.rotation[2], update.rotation[3]);
-            updateVessel.SetRotation(updateVessel.mainBody.bodyTransform.rotation * updateRotation);
 
             Vector3 angularVelocity = new Vector3(update.angularVelocity[0], update.angularVelocity[1], update.angularVelocity[2]);
 
             if (updateVessel.LandedOrSplashed)
             {
                 updateVessel.angularVelocity = Vector3.zero;
-                if (updateVessel.rootPart != null && 
-                    updateVessel.rootPart.rb != null &&
-                    !updateVessel.rootPart.rb.isKinematic)
+                if (updateVessel.rootPart != null && updateVessel.rootPart.rb != null && !updateVessel.rootPart.rb.isKinematic)
                 {
                     updateVessel.rootPart.rb.angularVelocity = Vector3.zero;
                 }
@@ -1958,9 +1971,7 @@ namespace DarkMultiPlayer
                     Vector3 newAng = updateVessel.ReferenceTransform.rotation * angularVelocity;
                     foreach (Part vesselPart in updateVessel.parts)
                     {
-                        if (vesselPart.rb != null && 
-                            !vesselPart.rb.isKinematic && 
-                            vesselPart.State == PartStates.ACTIVE)
+                        if (vesselPart.rb != null && !vesselPart.rb.isKinematic && vesselPart.State == PartStates.ACTIVE)
                         {
                             vesselPart.rb.angularVelocity = newAng;
                         }
@@ -2190,7 +2201,7 @@ namespace DarkMultiPlayer
         public double[] position;
         public double[] velocity;
         //KSP tells us a bunch of fibs. Lets keep it honest.
-        public double[] orbitalPositionDelta;
+        //public double[] orbitalPositionDelta;
     }
 }
 
