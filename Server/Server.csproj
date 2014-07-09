@@ -51,6 +51,8 @@
     <Compile Include="LockSystem.cs" />
     <Compile Include="DMPPlugin.cs" />
     <Compile Include="DMPPluginHandler.cs" />
+    <Compile Include="GroupSystem.cs" />
+    <Compile Include="ClientObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj">

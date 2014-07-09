@@ -20,6 +20,13 @@ namespace DarkMultiPlayerCommon
         //Program version. This is written in the build scripts.
         public const string PROGRAM_VERSION = "Custom";
 
+        public static string CalculateSHA256HashFromString(string text)
+        {
+            UTF8Encoding encoder = new UTF8Encoding();
+            return CalculateSHA256Hash(encoder.GetBytes(text));
+
+        }
+
         public static string CalculateSHA256Hash(string fileName)
         {
             return CalculateSHA256Hash(File.ReadAllBytes(fileName));
