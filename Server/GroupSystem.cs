@@ -206,6 +206,61 @@ namespace DarkMultiPlayerServer
             return true;
         }
 
+        public bool RemoveGroup(string groupName)
+        {
+            if (!groupInfo.ContainsKey(groupName))
+            {
+                DarkLog.Debug("Cannot remove group, " + groupName + " doesn't exist");
+                return false;
+            }
+            string[] groupMembers = GetGroupMembers(groupName);
+            foreach (string groupMember in groupMembers)
+            {
+                if (groupMember != groupInfo[groupName].groupOwner)
+                {
+                    LeaveGroup(groupMember);
+                }
+            }
+            playerGroup.Remove(groupInfo[groupName].groupOwner);
+            SavePlayer(groupInfo[groupName].groupOwner);
+            groupInfo.Remove(groupName);
+            SaveGroup(groupName);
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the group owner. If the group or player does not exist, or the player already belongs to a different group, this method returns false
+        /// </summary>
+        public bool SetGroupOwner(string groupName, string playerName)
+        {
+            if (!groupInfo.ContainsKey(groupName))
+            {
+                DarkLog.Debug("Cannot set group owner, " + groupName + " doesn't exist");
+                return false;
+            }
+            if (!PlayerExists(playerName))
+            {
+                DarkLog.Debug("Cannot set group owner, " + playerName + " does not exist");
+                return false;
+            }
+            if (playerGroup.ContainsKey(playerName) ? (playerGroup[playerName] != groupName) : false)
+            {
+                DarkLog.Debug("Cannot set group owner, " + playerName + " already belongs to another group");
+                return false;
+            }
+            if (!playerGroup.ContainsKey(playerName))
+            {
+                if (!JoinGroup(groupName, playerName))
+                {
+                    DarkLog.Debug("Cannot set group owner, " + playerName + " failed to join the group");
+                    return false;
+                }
+            }
+            groupInfo[groupName].groupOwner = playerName;
+            SaveGroup(groupName);
+            return true;
+        }
+
         /// <summary>
         /// Sets the group password. Set SHAPassword to null to remove the password. Returns true on success
         /// </summary>
@@ -254,6 +309,19 @@ namespace DarkMultiPlayerServer
             return knownGroups.ToArray();
         }
 
+        public string[] GetGroupMembers(string groupName)
+        {
+            List<string> groupMembers = new List<string>();
+            foreach (KeyValuePair<string,string> kvp in playerGroup)
+            {
+                if (kvp.Value == groupName)
+                {
+                    groupMembers.Add(kvp.Key);
+                }
+            }
+            return groupMembers.ToArray();
+        }
+
         /// <summary>
         /// Check if a group exists
         /// </summary>
@@ -269,24 +337,6 @@ namespace DarkMultiPlayerServer
         {
             string playerFile = Path.Combine(playerTokenDirectory, playerName + ".txt");
             return File.Exists(playerFile);
-        }
-
-        /// <summary>
-        /// Sets the group owner. If the group or player does not exist, returns false
-        /// </summary>
-        public bool SetGroupOwner(string groupName, string playerName)
-        {
-            if (!groupInfo.ContainsKey(groupName))
-            {
-                return false;
-            }
-            if (!PlayerExists(playerName))
-            {
-                return false;
-            }
-            groupInfo[groupName].groupOwner = playerName;
-            SaveGroup(groupName);
-            return true;
         }
 
         /// <summary>
@@ -327,6 +377,18 @@ namespace DarkMultiPlayerServer
                 return false;
             }
             return (groupInfo[groupName].groupPassword == groupPassword);
+        }
+
+        /// <summary>
+        /// Returns the group privacy. If the group does not exist, returns PUBLIC
+        /// </summary>
+        public GroupPrivacy GetGroupPrivacy(string groupName)
+        {
+            if (!groupInfo.ContainsKey(groupName))
+            {
+                return GroupPrivacy.PUBLIC;
+            }
+            return groupInfo[groupName].groupPrivacy;
         }
     }
 
