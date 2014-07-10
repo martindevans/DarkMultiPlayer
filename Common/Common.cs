@@ -353,6 +353,7 @@ namespace DarkMultiPlayerCommon
         CRAFT_LIBRARY,
         SCREENSHOT_LIBRARY,
         FLAG_SYNC,
+        GROUP,
         SYNC_TIME_REQUEST,
         PING_REQUEST,
         MOTD_REQUEST,
@@ -383,6 +384,7 @@ namespace DarkMultiPlayerCommon
         CRAFT_LIBRARY,
         SCREENSHOT_LIBRARY,
         FLAG_SYNC,
+        GROUP,
         SET_SUBSPACE,
         SYNC_TIME_REPLY,
         PING_REPLY,
@@ -497,6 +499,18 @@ namespace DarkMultiPlayerCommon
         DELETE_FILE,
     }
 
+    public enum GroupMessageType
+    {
+        LIST,
+        JOIN,
+        LEAVE,
+        SET_OWNER,
+        SET_PASSWORD,
+        SET_PRIVACY,
+        ADD_PLAYER,
+        REMOVE_PLAYER,
+    }
+
     public enum PlayerColorMessageType
     {
         LIST,
@@ -528,5 +542,25 @@ namespace DarkMultiPlayerCommon
         public long serverClock;
         public double planetTime;
         public float subspaceSpeed;
+    }
+
+    public class GroupObject
+    {
+        public GroupObject(string groupOwner, GroupPrivacy groupPrivacy)
+        {
+            this.groupOwner = groupOwner;
+            this.groupPrivacy = groupPrivacy;
+        }
+
+        public string groupOwner;
+        public GroupPrivacy groupPrivacy;
+        public string groupPasswordSalt;
+        public string groupPassword;
+    }
+
+    public enum GroupPrivacy
+    {
+        PUBLIC,
+        PRIVATE,
     }
 }
