@@ -22,6 +22,7 @@ namespace DarkMultiPlayerServer
         public static long lastPlayerActivity;
         public static object universeSizeLock = new object();
         public static string modFile;
+        private static ScreenshotCache scrCache = new ScreenshotCache();
 
         public static void Main()
         {
@@ -36,6 +37,9 @@ namespace DarkMultiPlayerServer
 
                 //Periodic garbage collection
                 long lastGarbageCollect = 0;
+
+                //Periodic screenshot "cache" cleaning
+                long lastScreenshotDelete = 0;
 
                 //Set universe directory and modfile path
                 universeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Universe");
@@ -102,6 +106,13 @@ namespace DarkMultiPlayerServer
                         {
                             lastGarbageCollect = serverClock.ElapsedTicks;
                             GC.Collect();
+                        }
+                        //Deletes the screenshot cache every 30 minutes.
+                        if ((serverClock.ElapsedMilliseconds - lastScreenshotDelete) > 1800000) 
+                        {
+                            lastScreenshotDelete = serverClock.ElapsedMilliseconds;
+                            // Deletes expired screenshots
+                            scrCache.ExpireCache();
                         }
                         Thread.Sleep(500);
                     }

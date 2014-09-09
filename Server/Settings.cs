@@ -167,6 +167,7 @@ namespace DarkMultiPlayerServer
             descriptionList.Add("numberOfAsteroids", "How many untracked asteroids to spawn into the universe. 0 = Disabled");
             descriptionList.Add("consoleIdentifier", "Specify the name that will appear when you send a message using the server's console.");
             descriptionList.Add("serverMotd", "Specify the server's MOTD (message of the day).");
+            descriptionList.Add("expireScreenshots", "Specify if screenshots should expire after a time they've been taken.");
             return descriptionList;
         }
     }
@@ -195,5 +196,6 @@ namespace DarkMultiPlayerServer
         public int numberOfAsteroids = 30;
         public string consoleIdentifier = "Server";
         public string serverMotd = "Welcome, %name%!";
+        public bool expireScreenshots = false;
     }
 }
