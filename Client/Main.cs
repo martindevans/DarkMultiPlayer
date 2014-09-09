@@ -393,6 +393,7 @@ namespace DarkMultiPlayer
             HighLogic.CurrentGame.flagURL = Settings.fetch.selectedFlag;
             HighLogic.CurrentGame.Title = "DarkMultiPlayer";
             HighLogic.CurrentGame.Parameters.Flight.CanQuickLoad = false;
+            HighLogic.CurrentGame.Parameters.Flight.CanRestart = false;
             HighLogic.SaveFolder = "DarkMultiPlayer";
 
             //Set the game mode
